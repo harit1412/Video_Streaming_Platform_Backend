@@ -232,9 +232,7 @@ const removeVideoFromPlaylist = async (req, res) => {
       _id: new mongoose.Types.ObjectId(playlistId),
     });
 
-
-    if(findPlaylist.Owner != findPlaylist.realOwner)
-    {
+    if (findPlaylist.Owner != findPlaylist.realOwner) {
       return res.status(404).json({
         message: "You are not real owner of playlist",
       });
@@ -274,18 +272,20 @@ const deletePlaylist = async (req, res) => {
 
     const playlist = await Playlist.findById(playlistId);
 
-
     if (!playlist) {
       return res.status(404).json({
         message: "No Such Playlist Exists",
       });
     }
 
-    if(playlist.Owner != playlist.realOwner || new mongoose.Types.ObjectId(playlist.realOwner)!=new mongoose.Types.ObjectId(userId))
-    {
+    if (
+      playlist.Owner != playlist.realOwner ||
+      new mongoose.Types.ObjectId(playlist.realOwner) !=
+        new mongoose.Types.ObjectId(userId)
+    ) {
       return res.status(404).json({
-        message : "You are not real owner of playlist"
-      })
+        message: "You are not real owner of playlist",
+      });
     }
 
     res.status(200).json({
@@ -311,20 +311,18 @@ const updatePlaylist = async (req, res) => {
       });
     }
 
-    const checkPlaylist = await Playlist.findById(playlistId)
+    const checkPlaylist = await Playlist.findById(playlistId);
 
-    if(!checkPlaylist)
-    {
+    if (!checkPlaylist) {
       return res.status(401).json({
-        message : "Playlist no more exist"
-      })
+        message: "Playlist no more exist",
+      });
     }
 
-    if(checkPlaylist.Owner!=checkPlaylist.realOwner)
-    {
+    if (checkPlaylist.Owner != checkPlaylist.realOwner) {
       return res.status(404).json({
-        message : "You are not real owner"
-      })
+        message: "You are not real owner",
+      });
     }
 
     const playlist = await Playlist.findByIdAndUpdate(
@@ -357,36 +355,62 @@ const updatePlaylist = async (req, res) => {
 };
 
 const savePlaylist = async (req, res) => {
-  const {playlistId} = req.params
-  const {userId} = req.params
+  const { playlistId } = req.params;
+  const { userId } = req.user._id;
 
-  const playlist = await Playlist.findById(playlistId)
+  const playlist = await Playlist.findById(playlistId);
 
-  if(!playlist && !playlist.PublicAccess)
-  {
+  if (!playlist && !playlist.PublicAccess) {
     return res.status(401).json({
-      message : "Playlist doesnt exist"
-    })
+      message: "Playlist doesnt exist",
+    });
   }
 
   const newPlaylist = await Playlist.create({
-    name : playlist.name,
-    description : playlist.description,
-    videos : playlist.videos,
-    realOwner : playlist.realOwner,
-    Owner : new mongoose.Types.ObjectId(userId),
-    ifSavedRef : new mongoose.Types.ObjectId(playlistId),
-    PublicAccess : true
-  })
+    name: playlist.name,
+    description: playlist.description,
+    videos: playlist.videos,
+    realOwner: playlist.realOwner,
+    Owner: new mongoose.Types.ObjectId(userId),
+    ifSavedRef: new mongoose.Types.ObjectId(playlistId),
+    PublicAccess: true,
+  });
 
   return res.status(200).json({
-    message : "OK",
-    data : newPlaylist
-  })
+    message: "OK",
+    data: newPlaylist,
+  });
 };
 
 const togglePlaylistAccess = async (req, res) => {
-  
+  const { playlistId } = req.params;
+  const { userId } = req.user._id;
+
+  const playlist = await Playlist.findById(playlistId);
+
+  if (!playlist) {
+    return res.status(401).json({
+      message: "Playlist doesnt exist",
+    });
+  }
+
+  if (
+    playlist.Owner != playlist.realOwner ||
+    playlist.realOwner != new mongoose.Types.ObjectId(userId)
+  ) {
+    return res.status(404).json({
+      message: "you are not real owner",
+    });
+  }
+
+  playlist.PublicAccess = !playlist.PublicAccess;
+
+  playlist.save();
+
+  return res.status(200).json({
+    message: "OK",
+    data: playlist,
+  });
 };
 
 module.exports = {
@@ -398,5 +422,5 @@ module.exports = {
   deletePlaylist,
   updatePlaylist,
   savePlaylist,
-  togglePlaylistAccess
+  togglePlaylistAccess,
 };
