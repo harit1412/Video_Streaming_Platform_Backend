@@ -1,4 +1,5 @@
 const { Router } = require("express");
+const asyncHandler = require("../utils/asyncHandlers.js")
 
 const verifyJWT = require("../middlewares/auth.middleware");
 const upload = require("../middlewares/multer.middleware");
@@ -28,15 +29,15 @@ VideoRouter.route("/").post(
   publishVideo
 );
 
-VideoRouter.route("/").get(getAllVideos)
+VideoRouter.route("/").get(asyncHandler(getAllVideos))
 
 
-VideoRouter.route("/:videoId").get(getVideoById)
-VideoRouter.route("/:videoId").delete(deleteVideoById)
+VideoRouter.route("/:videoId").get(asyncHandler(getVideoById))
+VideoRouter.route("/:videoId").delete(asyncHandler(deleteVideoById))
 VideoRouter.route("/:videoId").patch(
     upload.single("thumbnail")
     ,
-    updateThumbnail)
+    asyncHandler(updateThumbnail))
 
 
 module.exports = VideoRouter

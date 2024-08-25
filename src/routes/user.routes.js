@@ -1,4 +1,5 @@
 const { Router } = require("express");
+const asyncHandler = require("../utils/asyncHandlers.js")
 
 const {
   registerUser,
@@ -28,28 +29,28 @@ UserRouter.route("/register").post(
   registerUser
 );
 
-UserRouter.route("/login").post(logInUser);
+UserRouter.route("/login").post(asyncHandler(logInUser));
 
-UserRouter.route("/logout").post(verifyJWT, logOutUser);
+UserRouter.route("/logout").post(asyncHandler(verifyJWT), asyncHandler(logOutUser));
 
-UserRouter.route("/refresh-token").post(RefreshAccessToken);
+UserRouter.route("/refresh-token").post(asyncHandler(RefreshAccessToken));
 
-UserRouter.route("/change-password").post(verifyJWT, changeCurrentPassword);
+UserRouter.route("/change-password").post(asyncHandler(verifyJWT), asyncHandler(changeCurrentPassword));
 
-UserRouter.route("/current-user").get(verifyJWT, getCurrentUser);
+UserRouter.route("/current-user").get(asyncHandler(verifyJWT), asyncHandler(getCurrentUser));
 
-UserRouter.route("/update-account").patch(verifyJWT, updateAccountDetails);
+UserRouter.route("/update-account").patch(asyncHandler(verifyJWT), asyncHandler(updateAccountDetails));
 
 UserRouter.route("/avatar").patch(
-  verifyJWT,
+  asyncHandler(verifyJWT),
   upload.single("avatar"),
-  updateUserAvatar
+  asyncHandler(updateUserAvatar)
 );
 
 UserRouter.route("/cover-image").patch(
-  verifyJWT,
+  asyncHandler(verifyJWT),
   upload.single("coverImage"),
-  updateUserCoverImg
+  asyncHandler(updateUserCoverImg)
 );
 
 // UserRouter.route("/c/:username").get(verifyJWT, getUserChannelProfile);

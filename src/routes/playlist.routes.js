@@ -1,5 +1,7 @@
 const mongoose = require("mongoose")
 const {Router} = require("express")
+const asyncHandler = require("../utils/asyncHandlers.js")
+
 const {
     createPlaylist,
     getUserPlaylists,
@@ -20,18 +22,18 @@ PlaylistRouter.route("/").post(createPlaylist)
 
 PlaylistRouter
     .route("/:playlistId")
-    .get(getPlaylistById)
-    .patch(updatePlaylist)
-    .delete(deletePlaylist);
+    .get(asyncHandler(getPlaylistById))
+    .patch(asyncHandler(updatePlaylist))
+    .delete(asyncHandler(deletePlaylist));
 
-PlaylistRouter.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
-PlaylistRouter.route("/remove/:videoId/:playlistId").patch(removeVideoFromPlaylist);
+PlaylistRouter.route("/add/:videoId/:playlistId").patch(asyncHandler(addVideoToPlaylist));
+PlaylistRouter.route("/remove/:videoId/:playlistId").patch(asyncHandler(removeVideoFromPlaylist));
 
-PlaylistRouter.route("/user/:userId").get(getUserPlaylists);
+PlaylistRouter.route("/user/:userId").get(asyncHandler(getUserPlaylists));
 
-PlaylistRouter.route("/save/:playlistId").get(savePlaylist);
+PlaylistRouter.route("/save/:playlistId").get(asyncHandler(savePlaylist));
 
-PlaylistRouter.route("/toggleAccess/:playlistId").get(togglePlaylistAccess)
+PlaylistRouter.route("/toggleAccess/:playlistId").get(asyncHandler(togglePlaylistAccess))
 
 
 module.exports = PlaylistRouter
