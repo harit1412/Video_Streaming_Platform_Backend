@@ -73,7 +73,71 @@ const updateComment = async(req,res)=>{
     
 }
 
+const addReplyComment = async(req,res) => {
+    const userid = req.user._id
+    const parentCommentId = req.params.commentId
+    const content = req.body.text
+
+    const checkParent = await Comment.findById(mongoose.Schema.ObjectId(parentCommentId))
+
+    if(!content.trim()){
+        return res.status(401).json({
+            message : "Comment should not be empty"
+        })
+    }
+
+    if(!checkParent)
+    {
+        return res.status(401).json({
+            message : "Parent Comment Does not exist"
+        })
+    }
+
+    const replyComment = await Comment.create({
+        content : content,
+        replyId : mongoose.Schema.ObjectId(checkParent._id),
+        video : mongoose.Schema.ObjectId(checkParent.video),
+        owner : mongoose.Schema.ObjectId(userid)
+    })
+
+    return res.status(200).json({
+        message : "OK",
+        data : replyComment
+    })
+}
+
+const getReplyComment = async(req,res) => {
+    const commentId = req.params.commentId;
+    const userId = req.params.userId;
+
+    const replies = Comment.aggregate([
+        {
+            $match : {
+                replyId : mongoose.Schema.ObjectId(commentId)
+            }
+        },
+        {
+            $lookup :{
+                from : "User",
+                as : "user",
+                localField : "owner",
+                foreignField : "_id",
+            }
+        },
+        {
+            $project: {
+                user : 1,
+                content : 1,
+            }
+        }
+    ])
+
+    return res.status(200).json({
+        message : "OK",
+        data : replies
+    })
+}
 
 
 
-module.exports = {getVideoComments,addComment,deleteComment,updateComment}
+module.exports = {getVideoComments,addComment,deleteComment,updateComment,addReplyComment,getReplyComment}

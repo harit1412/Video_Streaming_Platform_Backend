@@ -10,7 +10,7 @@ const commentSchema = new mongoose.Schema(
         replyId : {
             type : mongoose.Schema.Types.ObjectId,
             ref : "Comment",
-            default : null
+            default : null // null shows root comment
         },
         video: {
             type: mongoose.Schema.Types.ObjectId,

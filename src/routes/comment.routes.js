@@ -4,7 +4,7 @@ const asyncHandler = require("../utils/asyncHandlers.js")
 const { getVideoComments,
     addComment,
     updateComment,
-    deleteComment} = require("../controllers/comment.controller.js")
+    deleteComment,addReplyComment,getReplyComment} = require("../controllers/comment.controller.js")
 
 
 const verifyJWT = require("../middlewares/auth.middleware.js")
@@ -18,5 +18,8 @@ CommentRouter.route("/:videoId").post(asyncHandler(addComment))
 
 CommentRouter.route("/c/:commentId").delete(asyncHandler(deleteComment))
 CommentRouter.route("/c/:commentId").patch(asyncHandler(updateComment))
+
+CommentRouter.route("/r/:commentId").post(asyncHandler(addReplyComment))
+CommentRouter.route("/r/:commentId").get(asyncHandler(getReplyComment))
 
 module.exports = CommentRouter
