@@ -130,98 +130,91 @@ const getPlaylistById = async (req, res) => {
 };
 
 const addVideoToPlaylist = async (req, res) => {
-  try {
-    const { playlistId, videoId } = req.params;
+  const { playlistId, videoId } = req.params;
 
-    const videoExist = await Video.findOne({
-      _id: new mongoose.Types.ObjectId(videoId),
-      isPublished: true,
-    });
+  const videoExist = await Video.findOne({
+    _id: new mongoose.Types.ObjectId(videoId),
+    isPublished: true,
+  });
 
-    if (!videoExist) {
-      return res.status(404).json({
-        message: "Video is Private",
-      });
-    }
-
-    if (videoExist.Owner != videoExist.realOwner) {
-      return res.status(404).json({
-        message: "You are not real owner of playlist",
-      });
-    }
-
-    const playlist = await Playlist.findOneAndUpdate(
-      {
-        _id: new mongoose.Types.ObjectId(playlistId),
-      },
-      {
-        $push: { videos: new mongoose.Types.ObjectId(videoId) },
-      },
-      {
-        new: true,
-      }
-    );
-
-    if (!playlist) {
-      return res.status(404).json({
-        message: "No Such Playlist Exists",
-      });
-    }
-
-    const newPlaylist = await Playlist.aggregate([
-      {
-        $match: {
-          _id: new mongoose.Types.ObjectId(playlistId),
-        },
-      },
-      {
-        $unwind: "$videos",
-      },
-      {
-        $lookup: {
-          from: "videos",
-          localField: "videos",
-          foreignField: "_id",
-          as: "videos",
-        },
-      },
-      {
-        $addFields: {
-          videos: {
-            $first: "$videos",
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          name: { $first: "$name" },
-          videos: {
-            $push: "$videos",
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          videos: 1,
-          name: 1,
-          totalVideos: { $size: "$videos" },
-        },
-      },
-    ]);
-
-    res.status(200).json({
-      message: "Video added to playlist successfully",
-      data: newPlaylist[0],
-    });
-  } catch (error) {
-    console.error("Error adding video to playlist:", error.message);
-    res.status(500).json({
-      message: "Server Error",
-      error: error.message,
+  if (!videoExist) {
+    return res.status(404).json({
+      message: "Video is Private",
     });
   }
+
+  if (videoExist.Owner != videoExist.realOwner) {
+    return res.status(404).json({
+      message: "You are not real owner of playlist",
+    });
+  }
+
+
+  const playlist = await Playlist.findOneAndUpdate(
+    {
+      _id: new mongoose.Types.ObjectId(playlistId),
+    },
+    {
+      $push: { videos: new mongoose.Types.ObjectId(videoId) },
+    },
+    {
+      new: true,runValidators:true
+    }
+  );
+
+  if (!playlist) {
+    return res.status(404).json({
+      message: "No Such Playlist Exists",
+    });
+  }
+
+  const newPlaylist = await Playlist.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(playlistId),
+      },
+    },
+    {
+      $unwind: "$videos",
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+      },
+    },
+    {
+      $addFields: {
+        videos: {
+          $first: "$videos",
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        videos: {
+          $push: "$videos",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        videos: 1,
+        name: 1,
+        totalVideos: { $size: "$videos" },
+      },
+    },
+  ]);
+
+  return res.status(200).json({
+    message: "Video added to playlist successfully",
+    data: newPlaylist[0],
+  });
 };
 
 const removeVideoFromPlaylist = async (req, res) => {
@@ -270,7 +263,9 @@ const deletePlaylist = async (req, res) => {
   try {
     const { playlistId } = req.params;
 
-    const playlist = await Playlist.findById(playlistId);
+    const playlist = await Playlist.findById(
+      new mongoose.Types.ObjectId(playlistId)
+    );
 
     if (!playlist) {
       return res.status(404).json({
@@ -279,18 +274,17 @@ const deletePlaylist = async (req, res) => {
     }
 
     if (
-      playlist.Owner != playlist.realOwner ||
-      new mongoose.Types.ObjectId(playlist.realOwner) !=
-        new mongoose.Types.ObjectId(userId)
+      playlist.Owner.equals(playlist.realOwner) &&
+      playlist.realOwner.equals(new mongoose.Types.ObjectId(req.user._id))
     ) {
+      return res.status(200).json({
+        message: "Playlist deleted successfully",
+      });
+    } else {
       return res.status(404).json({
         message: "You are not real owner of playlist",
       });
     }
-
-    res.status(200).json({
-      message: "Playlist deleted successfully",
-    });
   } catch (error) {
     console.error("Error deleting playlist:", error.message);
     res.status(500).json({
@@ -319,7 +313,7 @@ const updatePlaylist = async (req, res) => {
       });
     }
 
-    if (checkPlaylist.Owner != checkPlaylist.realOwner) {
+    if (!checkPlaylist.Owner.equals(checkPlaylist.realOwner)) {
       return res.status(404).json({
         message: "You are not real owner",
       });
